@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analisis ICU·PICU·IPIT — Antibiogram RSSA 2025</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #060810; color: #c9d1e0; font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+.header { border-bottom: 1px solid #161b2e; padding: 18px 24px; background: #080c14; }
+.header-sub { font-size: 11px; color: #64748b; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+.header-title { font-size: 22px; font-weight: 800; color: #c9d1e0; }
+.header-title span { color: #00c8e8; }
+
+.alert-banner { background: #00c8e812; border-bottom: 1px solid #00c8e830; padding: 10px 24px; display: flex; align-items: center; gap: 10px; font-size: 12px; flex-wrap: wrap; color: #c9d1e0; }
+.alert-label { color: #f59e0b; font-weight: 800; }
+
+.tabs { display: flex; gap: 4px; padding: 16px 24px 0; border-bottom: 1px solid #161b2e; flex-wrap: wrap; background: #080c14; }
+.tab-btn { background: transparent; color: #64748b; border: 1px solid transparent; border-bottom: none; border-radius: 6px 6px 0 0; padding: 8px 16px; font-size: 12px; cursor: pointer; transition: all .2s; }
+.tab-btn.active { background: #00c8e815; color: #00c8e8; border-color: #00c8e840; font-weight: 700; }
+.tab-btn:hover:not(.active) { color: #c9d1e0; background: #161b2e; }
+
+.content { padding: 24px; max-width: 1100px; margin: 0 auto; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+.card { background: #0b0e18; border: 1px solid #161b2e; border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+.section-title { color: #64748b; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+.grid-2i { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+@media (max-width: 700px) {
+  .grid-2 { grid-template-columns: 1fr; }
+  .grid-4 { grid-template-columns: 1fr 1fr; }
+  .grid-2i { grid-template-columns: 1fr; }
+  .content { padding: 12px; }
+  .tabs { padding: 12px 12px 0; }
+  .header { padding: 14px 16px; }
+}
+
+.badge { display: inline-block; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; letter-spacing: 1px; }
+.b-red  { background: #ef444420; color: #ef4444; border: 1px solid #ef444450; }
+.b-yel  { background: #f59e0b20; color: #f59e0b; border: 1px solid #f59e0b50; }
+.b-grn  { background: #10b98120; color: #10b981; border: 1px solid #10b98150; }
+.b-cyn  { background: #00c8e820; color: #00c8e8; border: 1px solid #00c8e850; }
+
+.stat-box { text-align: center; padding: 8px 4px; }
+.stat-val { font-size: 26px; font-weight: 800; font-family: monospace; }
+.stat-label { font-size: 11px; color: #64748b; margin-top: 4px; line-height: 1.4; }
+.stat-sub { font-size: 10px; color: #4b5563; margin-top: 2px; }
+
+.spec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.spec-box { background: #060810; border-radius: 8px; padding: 10px 12px; border-left: 3px solid #2563eb; }
+.spec-lbl { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
+.spec-val { font-size: 20px; font-weight: 800; font-family: monospace; color: #c9d1e0; }
+.spec-bug { font-size: 10px; color: #4b5563; }
+
+.room-hdr { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+.room-title { font-size: 17px; font-weight: 800; color: #c9d1e0; }
+.room-sub { font-size: 12px; color: #64748b; margin-top: 2px; }
+
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th { color: #64748b; text-align: left; padding: 7px 8px; font-size: 11px; border-bottom: 1px solid #161b2e; }
+th.c { text-align: center; }
+td { padding: 6px 8px; border-bottom: 1px solid #161b2e18; color: #c9d1e0; }
+td.c { text-align: center; }
+.mono { font-family: monospace; font-weight: 700; }
+.italic { font-style: italic; }
+.muted { color: #64748b; }
+.c-red { color: #ef4444; }
+.c-yel { color: #f59e0b; }
+.c-grn { color: #10b981; }
+.c-cyn { color: #00c8e8; }
+
+.cb { border-radius: 4px; padding: 2px 6px; font-family: monospace; font-weight: 700; font-size: 12px; }
+.cb-red { background: #ef444425; color: #ef4444; }
+.cb-yel { background: #f59e0b25; color: #f59e0b; }
+.cb-grn { background: #10b98125; color: #10b981; }
+
+.legend { display: flex; gap: 16px; margin-top: 12px; font-size: 11px; color: #64748b; flex-wrap: wrap; }
+
+.gap-stitle { font-size: 11px; font-weight: 700; margin-bottom: 8px; letter-spacing: 1px; }
+.gap-item { display: flex; gap: 8px; margin-bottom: 6px; }
+.gap-ico { flex-shrink: 0; }
+.gap-txt { font-size: 12px; line-height: 1.5; color: #c9d1e0; }
+.divider { border-top: 1px solid #161b2e; padding-top: 14px; margin-top: 2px; }
+
+.ibox { background: #060810; border-radius: 8px; padding: 14px; border-left: 3px solid; }
+.ibox-bug { font-size: 12px; font-weight: 700; font-style: italic; margin-bottom: 4px; }
+.ibox-room { font-size: 11px; color: #64748b; margin-bottom: 6px; }
+.ibox-txt { font-size: 12px; line-height: 1.6; color: #c9d1e0; }
+
+.info-box { padding: 10px 14px; background: #2563eb15; border-radius: 8px; font-size: 12px; border-left: 3px solid #2563eb; margin-bottom: 16px; color: #c9d1e0; }
+
+.rec-sec { margin-bottom: 22px; }
+.rec-hdr { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.rec-bar { width: 3px; height: 16px; border-radius: 2px; }
+.rec-item { display: flex; gap: 10px; margin-bottom: 8px; padding-left: 11px; }
+.rec-arr { font-size: 14px; flex-shrink: 0; }
+.rec-txt { font-size: 12px; line-height: 1.6; color: #c9d1e0; }
+
+.chart-wrap { position: relative; height: 260px; margin-bottom: 8px; }
+.chart-note { font-size: 11px; color: #64748b; margin-top: 8px; line-height: 1.5; }
+
+.footer { border-top: 1px solid #161b2e; padding: 16px 24px; font-size: 11px; color: #4b5563; background: #080c14; }
+
+.ovf { overflow-x: auto; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-sub">RSUD Dr. Saiful Anwar Malang &middot; Antibiogram 2025</div>
+  <div class="header-title">Analisis Khusus: <span>ICU &middot; PICU &middot; IPIT</span></div>
+</div>
+
+<div class="alert-banner">
+  <span class="alert-label">&#9888; PERINGATAN KRITIS:</span>
+  <span><em>A. baumannii</em> carbapenem-resistant mencapai <strong style="color:#f59e0b">100% di PICU</strong> dan <strong style="color:#f59e0b">80% di ICU Kapuas</strong> (darah). Colistin/Polymyxin B <strong style="color:#f59e0b">tidak diuji</strong> di seluruh ruangan ini.</span>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('overview',this)">Overview</button>
+  <button class="tab-btn" onclick="showTab('resistance',this)">Pola Resistensi</button>
+  <button class="tab-btn" onclick="showTab('sensitivity',this)">Sensitivitas Antibiotik</button>
+  <button class="tab-btn" onclick="showTab('gap',this)">Gap Analysis</button>
+  <button class="tab-btn" onclick="showTab('recom',this)">Rekomendasi</button>
+</div>
+
+<div class="content">
+
+<!-- OVERVIEW -->
+<div id="tab-overview" class="tab-panel active">
+  <div class="grid-2">
+    <div class="card">
+      <div class="room-hdr"><div><div class="room-title">ICU Kapuas</div><div class="room-sub">Total volume isolat</div></div><span class="badge b-red">KRITIS</span></div>
+      <div class="spec-grid">
+        <div class="spec-box"><div class="spec-lbl">Darah</div><div class="spec-val">259</div><div class="spec-bug">#1 K. pneumoniae (23%)</div></div>
+        <div class="spec-box"><div class="spec-lbl">Sputum</div><div class="spec-val">819</div><div class="spec-bug">#1 K. pneumoniae (24%)</div></div>
+        <div class="spec-box"><div class="spec-lbl">Urine</div><div class="spec-val">375</div><div class="spec-bug">#1 E. coli (21%)</div></div>
+        <div class="spec-box"><div class="spec-lbl">Pus</div><div class="spec-val">121</div><div class="spec-bug">#1 E. coli (36%)</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="room-hdr"><div><div class="room-title">PICU</div><div class="room-sub">Total volume isolat</div></div><span class="badge b-red">KRITIS</span></div>
+      <div class="spec-grid">
+        <div class="spec-box"><div class="spec-lbl">Darah</div><div class="spec-val">83</div><div class="spec-bug">#1 K. pneumoniae (35%)</div></div>
+        <div class="spec-box"><div class="spec-lbl">Sputum</div><div class="spec-val">219</div><div class="spec-bug">#1 K. pneumoniae (28%)</div></div>
+        <div class="spec-box"><div class="spec-lbl">Urine</div><div class="spec-val">28</div><div class="spec-bug">#1 E. coli (21%)</div></div>
+        <div class="spec-box"><div class="spec-lbl">Pus</div><div class="spec-val">17</div><div class="spec-bug">#1 E. coli (35%)</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="room-hdr"><div><div class="room-title">ICU IPIT</div><div class="room-sub">Total volume isolat</div></div><span class="badge b-yel">WASPADA</span></div>
+      <div class="spec-grid">
+        <div class="spec-box"><div class="spec-lbl">Darah</div><div class="spec-val">15</div><div class="spec-bug">#1 K. pneumoniae (33%)</div></div>
+        <div class="spec-box"><div class="spec-lbl">Sputum</div><div class="spec-val">88</div><div class="spec-bug">#1 K. pneumoniae (35%)</div></div>
+        <div class="spec-box"><div class="spec-lbl">Urine</div><div class="spec-val">19</div><div class="spec-bug">#1 E. coli (47%)</div></div>
+        <div class="spec-box"><div class="spec-lbl">Pus</div><div class="spec-val">8</div><div class="spec-bug">#1 P. aeruginosa (38%)</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="room-hdr"><div><div class="room-title">IPIT Non ICU</div><div class="room-sub">Total volume isolat</div></div><span class="badge b-yel">WASPADA</span></div>
+      <div class="spec-grid">
+        <div class="spec-box"><div class="spec-lbl">Darah</div><div class="spec-val">22</div><div class="spec-bug">#1 S. aureus (50%)</div></div>
+        <div class="spec-box"><div class="spec-lbl">Sputum</div><div class="spec-val">181</div><div class="spec-bug">#1 K. pneumoniae (39%)</div></div>
+        <div class="spec-box"><div class="spec-lbl">Urine</div><div class="spec-val">70</div><div class="spec-bug">#1 E. coli (46%)</div></div>
+        <div class="spec-box"><div class="spec-lbl">Pus</div><div class="spec-val">86</div><div class="spec-bug">#1 P. aeruginosa (26%)</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="section-title">Sorotan Kritis Lintas Ruangan</div>
+    <div class="grid-4">
+      <div class="stat-box"><div class="stat-val c-red">100%</div><div class="stat-label">CR-Acinetobacter PICU (Darah)</div><div class="stat-sub">n=15 isolat</div></div>
+      <div class="stat-box"><div class="stat-val c-red">80%</div><div class="stat-label">CR-Acinetobacter ICU Kapuas (Darah)</div><div class="stat-sub">n=56 isolat</div></div>
+      <div class="stat-box"><div class="stat-val c-yel">55%</div><div class="stat-label">MRSA PICU (Darah)</div><div class="stat-sub">n=9 isolat</div></div>
+      <div class="stat-box"><div class="stat-val c-yel">81%</div><div class="stat-label">ESBL K. pneumoniae ICU (Urine)</div><div class="stat-sub">n=58 isolat</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- RESISTENSI -->
+<div id="tab-resistance" class="tab-panel">
+  <div class="card">
+    <div class="section-title">Carbapenem-Resistant Rate per Ruangan (%)</div>
+    <div class="ovf">
+    <table>
+      <thead><tr><th>Bakteri</th><th>Spesimen</th><th class="c">ICU Kapuas</th><th class="c">PICU</th><th class="c">ICU IPIT</th><th class="c">IPIT Non ICU</th></tr></thead>
+      <tbody>
+        <tr><td class="italic">A. baumannii</td><td class="muted">Darah</td><td class="c"><span class="cb cb-red">80%</span></td><td class="c"><span class="cb cb-red">100%</span></td><td class="c muted">—</td><td class="c muted">—</td></tr>
+        <tr><td class="italic">K. pneumoniae</td><td class="muted">Darah</td><td class="c"><span class="cb cb-yel">20%</span></td><td class="c"><span class="cb cb-yel">20%</span></td><td class="c"><span class="cb cb-yel">40%</span></td><td class="c muted">—</td></tr>
+        <tr><td class="italic">P. aeruginosa</td><td class="muted">Darah</td><td class="c"><span class="cb cb-yel">36%</span></td><td class="c"><span class="cb cb-grn">0%</span></td><td class="c muted">—</td><td class="c muted">—</td></tr>
+        <tr><td class="italic">A. baumannii</td><td class="muted">Sputum</td><td class="c"><span class="cb cb-red">81%</span></td><td class="c"><span class="cb cb-red">79%</span></td><td class="c"><span class="cb cb-red">78%</span></td><td class="c"><span class="cb cb-yel">16%</span></td></tr>
+        <tr><td class="italic">K. pneumoniae</td><td class="muted">Sputum</td><td class="c"><span class="cb cb-grn">10%</span></td><td class="c"><span class="cb cb-grn">13%</span></td><td class="c"><span class="cb cb-grn">0%</span></td><td class="c"><span class="cb cb-grn">1%</span></td></tr>
+        <tr><td class="italic">P. aeruginosa</td><td class="muted">Sputum</td><td class="c"><span class="cb cb-grn">20%</span></td><td class="c"><span class="cb cb-grn">11%</span></td><td class="c"><span class="cb cb-grn">10%</span></td><td class="c"><span class="cb cb-grn">0%</span></td></tr>
+        <tr><td class="italic">A. baumannii</td><td class="muted">Urine</td><td class="c"><span class="cb cb-red">84%</span></td><td class="c"><span class="cb cb-red">66%</span></td><td class="c muted">—</td><td class="c muted">—</td></tr>
+        <tr><td class="italic">K. pneumoniae</td><td class="muted">Urine</td><td class="c"><span class="cb cb-yel">38%</span></td><td class="c muted">—</td><td class="c muted">—</td><td class="c"><span class="cb cb-yel">16%</span></td></tr>
+        <tr><td class="italic">A. baumannii</td><td class="muted">Pus</td><td class="c muted">—</td><td class="c"><span class="cb cb-red">100%</span></td><td class="c muted">—</td><td class="c"><span class="cb cb-red">80%</span></td></tr>
+        <tr><td class="italic">P. aeruginosa</td><td class="muted">Pus</td><td class="c muted">—</td><td class="c"><span class="cb cb-grn">0%</span></td><td class="c"><span class="cb cb-yel">33%</span></td><td class="c"><span class="cb cb-yel">43%</span></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="legend"><span><span class="c-red">&#9632;</span> &ge;70% Kritis</span><span><span class="c-yel">&#9632;</span> 40&ndash;69% Waspada</span><span><span class="c-grn">&#9632;</span> &lt;40% Relatif Aman</span></div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">ESBL Rate per Ruangan (%)</div>
+    <div class="ovf">
+    <table>
+      <thead><tr><th>Bakteri</th><th>Spesimen</th><th class="c">ICU Kapuas</th><th class="c">PICU</th><th class="c">ICU IPIT</th><th class="c">IPIT Non ICU</th></tr></thead>
+      <tbody>
+        <tr><td class="italic">K. pneumoniae</td><td class="muted">Darah</td><td class="c"><span class="cb cb-red">68%</span></td><td class="c"><span class="cb cb-red">75%</span></td><td class="c"><span class="cb cb-yel">40%</span></td><td class="c muted">—</td></tr>
+        <tr><td class="italic">E. coli</td><td class="muted">Darah</td><td class="c"><span class="cb cb-red">75%</span></td><td class="c"><span class="cb cb-red">100%</span></td><td class="c"><span class="cb cb-red">100%</span></td><td class="c muted">—</td></tr>
+        <tr><td class="italic">K. pneumoniae</td><td class="muted">Sputum</td><td class="c"><span class="cb cb-red">53%</span></td><td class="c"><span class="cb cb-red">70%</span></td><td class="c"><span class="cb cb-yel">49%</span></td><td class="c"><span class="cb cb-yel">42%</span></td></tr>
+        <tr><td class="italic">E. coli</td><td class="muted">Sputum</td><td class="c"><span class="cb cb-red">80%</span></td><td class="c"><span class="cb cb-red">88%</span></td><td class="c"><span class="cb cb-red">71%</span></td><td class="c"><span class="cb cb-red">72%</span></td></tr>
+        <tr><td class="italic">K. pneumoniae</td><td class="muted">Urine</td><td class="c"><span class="cb cb-red">81%</span></td><td class="c muted">—</td><td class="c muted">—</td><td class="c"><span class="cb cb-grn">33%</span></td></tr>
+        <tr><td class="italic">E. coli</td><td class="muted">Urine</td><td class="c"><span class="cb cb-red">61%</span></td><td class="c"><span class="cb cb-red">66%</span></td><td class="c"><span class="cb cb-yel">55%</span></td><td class="c"><span class="cb cb-yel">58%</span></td></tr>
+        <tr><td class="italic">E. coli</td><td class="muted">Pus</td><td class="c"><span class="cb cb-red">66%</span></td><td class="c"><span class="cb cb-red">66%</span></td><td class="c muted">—</td><td class="c"><span class="cb cb-red">77%</span></td></tr>
+        <tr><td class="italic">K. pneumoniae</td><td class="muted">Pus</td><td class="c"><span class="cb cb-grn">29%</span></td><td class="c"><span class="cb cb-red">100%</span></td><td class="c muted">—</td><td class="c"><span class="cb cb-yel">50%</span></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="legend"><span><span class="c-red">&#9632;</span> &ge;70% Kritis</span><span><span class="c-yel">&#9632;</span> 40&ndash;69% Waspada</span><span><span class="c-grn">&#9632;</span> &lt;40% Relatif Aman</span></div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Prevalensi MRSA per Ruangan &amp; Spesimen</div>
+    <table>
+      <thead><tr><th>Ruangan</th><th>Spesimen</th><th class="c">n S. aureus</th><th class="c">MRSA %</th><th class="c">Status</th></tr></thead>
+      <tbody>
+        <tr><td>ICU Kapuas</td><td class="muted">Darah</td><td class="c mono">18</td><td class="c mono c-yel">39%</td><td class="c"><span class="badge b-yel">SEDANG</span></td></tr>
+        <tr><td>ICU Kapuas</td><td class="muted">Sputum</td><td class="c mono">23</td><td class="c mono c-grn">4%</td><td class="c"><span class="badge b-grn">RENDAH</span></td></tr>
+        <tr><td>ICU Kapuas</td><td class="muted">Pus</td><td class="c mono">9</td><td class="c mono c-yel">33%</td><td class="c"><span class="badge b-yel">SEDANG</span></td></tr>
+        <tr><td>PICU</td><td class="muted">Darah</td><td class="c mono">9</td><td class="c mono c-red">55%</td><td class="c"><span class="badge b-red">TINGGI</span></td></tr>
+        <tr><td>PICU</td><td class="muted">Sputum</td><td class="c mono">10</td><td class="c mono c-yel">30%</td><td class="c"><span class="badge b-yel">SEDANG</span></td></tr>
+        <tr><td>PICU</td><td class="muted">Pus</td><td class="c mono">2</td><td class="c mono c-red">50%</td><td class="c"><span class="badge b-red">TINGGI*</span></td></tr>
+        <tr><td>ICU IPIT</td><td class="muted">Sputum</td><td class="c mono">1</td><td class="c mono c-grn">0%</td><td class="c"><span class="badge b-grn">RENDAH*</span></td></tr>
+        <tr><td>IPIT Non ICU</td><td class="muted">Darah</td><td class="c mono">9</td><td class="c mono c-yel">22%</td><td class="c"><span class="badge b-yel">SEDANG</span></td></tr>
+        <tr><td>IPIT Non ICU</td><td class="muted">Sputum</td><td class="c mono">3</td><td class="c mono c-yel">33%</td><td class="c"><span class="badge b-yel">SEDANG*</span></td></tr>
+        <tr><td>IPIT Non ICU</td><td class="muted">Pus</td><td class="c mono">15</td><td class="c mono c-red">40%</td><td class="c"><span class="badge b-red">TINGGI</span></td></tr>
+      </tbody>
+    </table>
+    <div style="font-size:11px;color:#4b5563;margin-top:10px">* n kecil, interpretasi hati-hati</div>
+  </div>
+</div>
+
+<!-- SENSITIVITAS -->
+<div id="tab-sensitivity" class="tab-panel">
+  <div class="info-box"><strong>Catatan:</strong> ICU IPIT dan IPIT Non ICU menggunakan data sputum K. pneumoniae. Data ICU Kapuas dan PICU dari sputum kecuali disebutkan lain.</div>
+  <div class="card">
+    <div class="section-title">Sensitivitas Antibiotik — Klebsiella pneumoniae (Sputum)</div>
+    <div class="chart-wrap"><canvas id="chartKpneu"></canvas></div>
+    <div class="chart-note">%Sensitivitas (%S) — semakin tinggi semakin efektif. CRO=Ceftriaxone; CAZ=Ceftazidime; GEN=Gentamicin; AK=Amikacin; CIP=Ciprofloxacin; SCF=Cefoperazone/Sulbactam; TIG=Tigecycline; MEM=Meropenem</div>
+  </div>
+  <div class="card">
+    <div class="section-title">Sensitivitas Antibiotik — Acinetobacter baumannii (Sputum)</div>
+    <div class="chart-wrap"><canvas id="chartAbau"></canvas></div>
+    <div class="chart-note">%Sensitivitas (%S) — patogen dengan carbapenem resistance tertinggi di semua ruangan kritis</div>
+  </div>
+  <div class="card">
+    <div class="section-title">Interpretasi Klinis</div>
+    <div class="grid-2i">
+      <div class="ibox" style="border-color:#f59e0b"><div class="ibox-bug c-yel">K. pneumoniae</div><div class="ibox-room">ICU Kapuas &amp; PICU</div><div class="ibox-txt">MEM sensitivity 78–89% — masih bisa digunakan sebagai pilihan utama tapi harus dikombinasikan. CIP hanya 25% — jangan gunakan sebagai terapi empirik.</div></div>
+      <div class="ibox" style="border-color:#ef4444"><div class="ibox-bug c-red">A. baumannii</div><div class="ibox-room">ICU Kapuas &amp; PICU</div><div class="ibox-txt">MEM hanya 19–20%, AK 56–63%. Hanya TIG dan SCF yang relatif lebih baik. Tanpa Colistin, opsi terapi sangat terbatas.</div></div>
+      <div class="ibox" style="border-color:#10b981"><div class="ibox-bug c-grn">K. pneumoniae</div><div class="ibox-room">ICU IPIT &amp; IPIT Non ICU</div><div class="ibox-txt">MEM masih 99–100% sensitif — regimen berbasis carbapenem masih efektif. Profil resistensi jauh lebih baik dibanding ICU Kapuas.</div></div>
+      <div class="ibox" style="border-color:#f59e0b"><div class="ibox-bug c-yel">A. baumannii</div><div class="ibox-room">ICU IPIT &amp; IPIT Non ICU</div><div class="ibox-txt">Data terbatas (n&lt;30 di ICU IPIT). CR 78% tapi antibiogram tidak tersedia. Butuh penambahan data atau penggabungan dengan ICU Kapuas.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- GAP -->
+<div id="tab-gap" class="tab-panel">
+  <div class="grid-2">
+    <div class="card">
+      <div class="room-hdr"><div class="room-title">ICU Kapuas</div><span class="badge b-red">KRITIS</span></div>
+      <div class="gap-stitle c-grn">&#10003; KEKUATAN DATA</div>
+      <div class="gap-item"><span class="gap-ico c-grn">&#10003;</span><span class="gap-txt">Data paling lengkap – antibiogram tersedia untuk semua spesimen</span></div>
+      <div class="gap-item"><span class="gap-ico c-grn">&#10003;</span><span class="gap-txt">Jumlah isolat memadai untuk analisis statistik (sputum n=819)</span></div>
+      <div class="gap-item"><span class="gap-ico c-grn">&#10003;</span><span class="gap-txt">Data 3 bakteri utama tersedia di spesimen darah</span></div>
+      <div class="divider">
+        <div class="gap-stitle c-red">&#10007; KESENJANGAN / GAP</div>
+        <div class="gap-item"><span class="gap-ico c-red">&#10007;</span><span class="gap-txt">Colistin/Polymyxin B tidak diuji — padahal CR-Acinetobacter 80%</span></div>
+        <div class="gap-item"><span class="gap-ico c-red">&#10007;</span><span class="gap-txt">Tidak ada antibiogram pus lengkap (n=121, hanya E. coli memenuhi threshold)</span></div>
+        <div class="gap-item"><span class="gap-ico c-red">&#10007;</span><span class="gap-txt">K. pneumoniae urine: CR 38% tanpa alternatif last-resort yang diuji</span></div>
+        <div class="gap-item"><span class="gap-ico c-red">&#10007;</span><span class="gap-txt">Tidak ada data Ceftazidime-Avibactam untuk KPC/MBL producer</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="room-hdr"><div class="room-title">PICU</div><span class="badge b-red">KRITIS</span></div>
+      <div class="gap-stitle c-grn">&#10003; KEKUATAN DATA</div>
+      <div class="gap-item"><span class="gap-ico c-grn">&#10003;</span><span class="gap-txt">Antibiogram sputum tersedia untuk 3 bakteri (K. pneumoniae, A. baumannii, P. aeruginosa)</span></div>
+      <div class="gap-item"><span class="gap-ico c-grn">&#10003;</span><span class="gap-txt">Data MRSA tersedia per spesimen</span></div>
+      <div class="divider">
+        <div class="gap-stitle c-red">&#10007; KESENJANGAN / GAP</div>
+        <div class="gap-item"><span class="gap-ico c-red">&#10007;</span><span class="gap-txt">A. baumannii darah CR 100% — tidak ada antibiogram karena n&lt;30</span></div>
+        <div class="gap-item"><span class="gap-ico c-red">&#10007;</span><span class="gap-txt">Tidak ada antibiogram urine (n=28) dan pus (n=17)</span></div>
+        <div class="gap-item"><span class="gap-ico c-red">&#10007;</span><span class="gap-txt">Colistin tidak diuji untuk pengelolaan CRGNB</span></div>
+        <div class="gap-item"><span class="gap-ico c-red">&#10007;</span><span class="gap-txt">Paradoks: resistensi tertinggi justru data paling sedikit</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="room-hdr"><div class="room-title">ICU IPIT</div><span class="badge b-yel">WASPADA</span></div>
+      <div class="gap-stitle c-grn">&#10003; KEKUATAN DATA</div>
+      <div class="gap-item"><span class="gap-ico c-grn">&#10003;</span><span class="gap-txt">Antibiogram sputum K. pneumoniae tersedia (n=31)</span></div>
+      <div class="gap-item"><span class="gap-ico c-grn">&#10003;</span><span class="gap-txt">MEM sensitivity 100% — carbapenem masih efektif untuk K. pneumoniae</span></div>
+      <div class="gap-item"><span class="gap-ico c-grn">&#10003;</span><span class="gap-txt">CR rate lebih rendah dibanding ICU Kapuas</span></div>
+      <div class="divider">
+        <div class="gap-stitle c-red">&#10007; KESENJANGAN / GAP</div>
+        <div class="gap-item"><span class="gap-ico c-red">&#10007;</span><span class="gap-txt">Volume sangat kecil — darah n=15, urine n=19, pus n=8 (semua di bawah threshold)</span></div>
+        <div class="gap-item"><span class="gap-ico c-red">&#10007;</span><span class="gap-txt">Tidak ada antibiogram darah, urine, dan pus</span></div>
+        <div class="gap-item"><span class="gap-ico c-red">&#10007;</span><span class="gap-txt">A. baumannii CR 78% di sputum tapi n=23 — tidak ada antibiogram</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="room-hdr"><div class="room-title">IPIT Non ICU</div><span class="badge b-yel">WASPADA</span></div>
+      <div class="gap-stitle c-grn">&#10003; KEKUATAN DATA</div>
+      <div class="gap-item"><span class="gap-ico c-grn">&#10003;</span><span class="gap-txt">Antibiogram sputum tersedia untuk 3 kelompok bakteri</span></div>
+      <div class="gap-item"><span class="gap-ico c-grn">&#10003;</span><span class="gap-txt">Antibiogram pus dan urine E. coli tersedia</span></div>
+      <div class="gap-item"><span class="gap-ico c-grn">&#10003;</span><span class="gap-txt">CR rate lebih rendah — lebih sedikit paparan antibiotik sebelumnya</span></div>
+      <div class="divider">
+        <div class="gap-stitle c-red">&#10007; KESENJANGAN / GAP</div>
+        <div class="gap-item"><span class="gap-ico c-red">&#10007;</span><span class="gap-txt">Tidak ada antibiogram darah (n=22)</span></div>
+        <div class="gap-item"><span class="gap-ico c-red">&#10007;</span><span class="gap-txt">MRSA pus 40% tanpa antibiogram S. aureus</span></div>
+        <div class="gap-item"><span class="gap-ico c-red">&#10007;</span><span class="gap-txt">Pengelompokan 'Batang Gram Negatif' menyembunyikan profil resistensi per spesies</span></div>
+        <div class="gap-item"><span class="gap-ico c-red">&#10007;</span><span class="gap-txt">P. aeruginosa pus CR 43% tanpa antibiogram tersendiri</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Matriks Ketersediaan Antibiogram</div>
+    <div class="ovf">
+    <table>
+      <thead><tr><th>Spesimen</th><th class="c">ICU Kapuas</th><th class="c">PICU</th><th class="c">ICU IPIT</th><th class="c">IPIT Non ICU</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Darah</strong></td><td class="c"><span class="badge b-yel">Parsial (3 sp)</span></td><td class="c"><span class="badge b-red">Tidak ada</span></td><td class="c"><span class="badge b-red">Tidak ada</span></td><td class="c"><span class="badge b-red">Tidak ada</span></td></tr>
+        <tr><td><strong>Sputum</strong></td><td class="c"><span class="badge b-grn">Lengkap (4 sp)</span></td><td class="c"><span class="badge b-grn">Lengkap (3 sp)</span></td><td class="c"><span class="badge b-yel">Parsial (1 sp)</span></td><td class="c"><span class="badge b-yel">Parsial (3 sp)</span></td></tr>
+        <tr><td><strong>Urine</strong></td><td class="c"><span class="badge b-yel">Parsial (3 sp)</span></td><td class="c"><span class="badge b-red">Tidak ada</span></td><td class="c"><span class="badge b-red">Tidak ada</span></td><td class="c"><span class="badge b-yel">Parsial (1 sp)</span></td></tr>
+        <tr><td><strong>Pus</strong></td><td class="c"><span class="badge b-yel">Parsial (1 sp)</span></td><td class="c"><span class="badge b-red">Tidak ada</span></td><td class="c"><span class="badge b-red">Tidak ada</span></td><td class="c"><span class="badge b-yel">Gabungan</span></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+<!-- REKOMENDASI -->
+<div id="tab-recom" class="tab-panel">
+  <div class="card">
+    <div class="section-title">Rekomendasi Prioritas</div>
+    <div class="rec-sec">
+      <div class="rec-hdr"><div class="rec-bar" style="background:#ef4444"></div><span class="badge b-red">SEGERA</span></div>
+      <div class="rec-item"><span class="rec-arr c-red">&#8594;</span><span class="rec-txt">Tambahkan uji <strong>Colistin/Polymyxin B</strong> untuk <em>A. baumannii</em> dan <em>P. aeruginosa</em> carbapenem-resistant di ICU Kapuas dan PICU</span></div>
+      <div class="rec-item"><span class="rec-arr c-red">&#8594;</span><span class="rec-txt">PICU: <em>A. baumannii</em> darah CR <strong>100%</strong> — konsultasi PPRA untuk protokol terapi empirik khusus pediatri</span></div>
+      <div class="rec-item"><span class="rec-arr c-red">&#8594;</span><span class="rec-txt">ICU Kapuas: <em>K. pneumoniae</em> urine CR 38% — pertimbangkan kombinasi <strong>Fosfomycin + Carbapenem</strong> sambil menunggu kultur definitif</span></div>
+      <div class="rec-item"><span class="rec-arr c-red">&#8594;</span><span class="rec-txt">Gabungkan data isolat ICU IPIT dengan ICU Kapuas untuk memenuhi threshold antibiogram minimum 30 isolat per spesies</span></div>
+    </div>
+    <div class="rec-sec">
+      <div class="rec-hdr"><div class="rec-bar" style="background:#f59e0b"></div><span class="badge b-yel">JANGKA MENENGAH</span></div>
+      <div class="rec-item"><span class="rec-arr c-yel">&#8594;</span><span class="rec-txt">Lakukan uji <strong>Ceftazidime-Avibactam</strong> untuk deteksi KPC/MBL producer di semua ICU</span></div>
+      <div class="rec-item"><span class="rec-arr c-yel">&#8594;</span><span class="rec-txt">IPIT Non ICU: Pisahkan antibiogram per spesies — jangan digabung sebagai "Batang Gram Negatif"</span></div>
+      <div class="rec-item"><span class="rec-arr c-yel">&#8594;</span><span class="rec-txt">PICU: Perluas panel antibiotik — tambahkan <strong>Piperacillin-Tazobactam</strong> dan <strong>Imipenem</strong></span></div>
+      <div class="rec-item"><span class="rec-arr c-yel">&#8594;</span><span class="rec-txt">Tambahkan antibiotik anti-MRSA di panel PICU: <strong>Daptomycin</strong> dan <strong>Tedizolid</strong> mengingat MRSA darah 55%</span></div>
+    </div>
+    <div class="rec-sec">
+      <div class="rec-hdr"><div class="rec-bar" style="background:#10b981"></div><span class="badge b-grn">JANGKA PANJANG</span></div>
+      <div class="rec-item"><span class="rec-arr c-grn">&#8594;</span><span class="rec-txt">Implementasi <strong>Whole Genome Sequencing (WGS)</strong> untuk CRKP dan CRAB — identifikasi mekanisme resistensi (OXA-23, NDM, KPC) dan pelacakan transmisi klonal</span></div>
+      <div class="rec-item"><span class="rec-arr c-grn">&#8594;</span><span class="rec-txt">Buat <strong>dashboard real-time</strong> resistensi berbasis SIMRS — early warning saat outbreak klonal di satu ruangan</span></div>
+      <div class="rec-item"><span class="rec-arr c-grn">&#8594;</span><span class="rec-txt">Integrasi data klinis (mortalitas, lama rawat) dengan profil resistensi per ruangan</span></div>
+      <div class="rec-item"><span class="rec-arr c-grn">&#8594;</span><span class="rec-txt">Perbandingan tren tahunan 2023–2025 untuk evaluasi program PPRA</span></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /content -->
+
+<div class="footer">Sumber: Antibiogram Kumulatif RSUD Dr. Saiful Anwar Malang Periode 2025 &middot; Instalasi Mikrobiologi Klinik &middot; Diterbitkan Maret 2026</div>
+
+<script>
+function showTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'sensitivity') setTimeout(initCharts, 50);
+}
+
+var chartsReady = false;
+function initCharts() {
+  if (chartsReady) return;
+  chartsReady = true;
+
+  var kLabels = ['CRO','CAZ','GEN','AK','CIP','SCF','TIG','MEM'];
+  var kData = [
+    { label: 'ICU Kapuas',   data: [28,34,43,73,25,66,82,78],  backgroundColor: '#ef444499', borderColor: '#ef4444', borderWidth:1 },
+    { label: 'PICU',         data: [29,29,31,65,24,81,94,89],  backgroundColor: '#f59e0b99', borderColor: '#f59e0b', borderWidth:1 },
+    { label: 'ICU IPIT',     data: [51,68,68,97,26,77,77,100], backgroundColor: '#10b98199', borderColor: '#10b981', borderWidth:1 },
+    { label: 'IPIT Non ICU', data: [44,52,72,93,35,98,92,99],  backgroundColor: '#2563eb99', borderColor: '#2563eb', borderWidth:1 }
+  ];
+
+  var aLabels = ['AK','TIG','GEN','CIP','SCF','MEM'];
+  var aData = [
+    { label: 'ICU Kapuas',   data: [56,52,15,14,67,19], backgroundColor: '#ef444499', borderColor: '#ef4444', borderWidth:1 },
+    { label: 'PICU',         data: [63,53,20,20,69,20], backgroundColor: '#f59e0b99', borderColor: '#f59e0b', borderWidth:1 },
+    { label: 'ICU IPIT',     data: [90,87,81,65,92,84], backgroundColor: '#10b98199', borderColor: '#10b981', borderWidth:1 },
+    { label: 'IPIT Non ICU', data: [90,87,81,65,92,84], backgroundColor: '#2563eb99', borderColor: '#2563eb', borderWidth:1 }
+  ];
+
+  var opts = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { labels: { color: '#64748b', font: { size: 11 } } },
+      tooltip: { callbacks: { label: function(c){ return c.dataset.label + ': ' + c.raw + '%'; } } }
+    },
+    scales: {
+      x: { ticks: { color: '#64748b', font: { size: 11 } }, grid: { color: '#161b2e' } },
+      y: { min: 0, max: 100, ticks: { color: '#64748b', font: { size: 10 }, callback: function(v){ return v+'%'; } }, grid: { color: '#161b2e' } }
+    }
+  };
+
+  new Chart(document.getElementById('chartKpneu').getContext('2d'), { type: 'bar', data: { labels: kLabels, datasets: kData }, options: JSON.parse(JSON.stringify(opts)) });
+  new Chart(document.getElementById('chartAbau').getContext('2d'),  { type: 'bar', data: { labels: aLabels, datasets: aData }, options: JSON.parse(JSON.stringify(opts)) });
+}
+</script>
+</body>
+</html>
